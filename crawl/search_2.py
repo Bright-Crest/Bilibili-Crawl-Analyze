@@ -10,9 +10,11 @@ lock = threading.Lock()
 pageQ = queue.Queue()
 key = "原神" # 搜索关键词
 # 在浏览器登录后f12查看cookie，填入下面的变量中
-Cookie = "YOUR COOKIE"
+Cookie = "buvid3=41CC8967-7AEA-E636-7552-8B8F4E000FAD65451infoc; b_nut=1731505165; _uuid=96910C12E-12BA-FD49-B9CD-6C23184B8107C48655infoc; buvid_fp=5b920de7793a6f9e328ed9b9bc038619; buvid4=CB2F6860-22AC-A044-3CB4-90DC0DD8B1C566546-024111313-WdCW6kpkJsEgRp%2FNSmR0TA%3D%3D; rpdid=|(JJmY)YR|l|0J'u~Ju~J)u~|; DedeUserID=354559240; DedeUserID__ckMd5=02759c77df99598e; header_theme_version=CLOSE; enable_web_push=DISABLE; home_feed_column=5; bili_ticket=eyJhbGciOiJIUzI1NiIsImtpZCI6InMwMyIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzU0Mzg3NjgsImlhdCI6MTczNTE3OTUwOCwicGx0IjotMX0.Qh8fUlXyjXECPN5Aw63iG_U0JipwScDWOzRgllDZsY0; bili_ticket_expires=1735438708; SESSDATA=e99a072b%2C1750731577%2C8f04a%2Ac1CjC74z1JdeB8i4vx0iJ_F1ILftW-nK_GZUnk5Vk3XqX-wqKTBir2lK7AdayDPz2R9HQSVmJJVXZ5UkQ5c3Rpa1hvcFJlWVJsVDlTQlE0VkNIWnplYk93T3gtdkw2akFNRkt4b1BnUk9OUm1zMURpYUZJVm9qdm05UjN3Z1hNZG43MzVXdlpNOEJBIIEC; bili_jct=255f2cb99fc2129aec36cbf77f24f7bb; b_lsid=A5C43DBD_194019D96B9; bsource=search_bing; is-2022-channel=1; browser_resolution=1659-834; sid=8t7gmhbx; bp_t_offset_354559240=1015148376909414400; CURRENT_FNVAL=2000"
 
-def get_page(page, max_retries=3):
+def get_page(page, keyword=None, max_retries=3):
+    if keyword is None:
+        keyword = "原神"  # 默认关键词
     for retry in range(max_retries):
         try:
             headers = {
@@ -24,7 +26,7 @@ def get_page(page, max_retries=3):
             
             params = {
                 'search_type': 'video',
-                'keyword': key,
+                'keyword': keyword,
                 'page': page,
                 'page_size': 20,
             }
