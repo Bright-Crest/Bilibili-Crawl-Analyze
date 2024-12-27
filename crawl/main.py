@@ -2,7 +2,7 @@ import json
 import time
 from typing import List
 from crawler import BilibiliCrawler
-from search_2 import get_page
+from search import get_page
 from concurrent.futures import ThreadPoolExecutor
 import queue
 import os
