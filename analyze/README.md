@@ -28,7 +28,7 @@ pip install requests pandas jieba snownlp pyecharts
 
 ### 使用方法
 
-### 1. 准备爬取出的弹幕数据文件
+#### 1. 准备爬取出的弹幕数据文件
 
 将爬取的弹幕信息保存为 CSV 格式文件，文件的每一行应包含以下字段：
 
@@ -37,7 +37,7 @@ pip install requests pandas jieba snownlp pyecharts
 - **color**：弹幕颜色（可忽略）
 - **text**：弹幕的文本内容
 
-### 2. 运行分析工具
+#### 2. 运行分析工具
 
 ```bash
 python bullet_emotion_analysis.py
@@ -47,7 +47,7 @@ python highlight_search.py
 
 运行后，会自动读取弹幕文件，进行情感分析和弹幕数量统计，最终生成几个 HTML 文件，展示情感分析柱状图、时间段弹幕数量柱状图，以及高光时刻信息。
 
-### 3. 查看结果
+#### 3. 查看结果
 
 运行脚本后，生成的 `emotion_distribution.html` `highlight_distribution.html` 文件会自动在您的默认浏览器中打开。您将看到以下内容：
 
