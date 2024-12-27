@@ -1,15 +1,15 @@
 
 ## B 站视频爬取分析
 
-### 弹幕分析
+### 简述
 
-该工具用于对弹幕数据进行情感分析与时间间隔内的弹幕数量统计，并生成相应的可视化图表，包括情感分布柱状图和弹幕数量时间分布柱状图。工具支持自动分析弹幕的高光时刻，并标记在生成的图表中。
+该工具用于对已爬取出的`BiliBili`视频及其对应评论、弹幕数据进行分析统计，并生成相应的可视化图表，类型包括柱状图、散点图和折线图。
 
-## 功能概述
+### 功能概述
 
-- **情感分析**：通过 SnowNLP 对弹幕进行情感分析，并根据情感得分生成情感分布柱状图。
-- **高光时刻**：统计每个时间段内的弹幕数量，自动找出弹幕数量最多的时间段（高光时刻），并在柱状图中突出显示。
-- **图表展示**：生成带有弹幕数量和情感分布的交互式图表，支持自动打开浏览器查看。
+- **视频分析**：分析视频播放量
+- **评论分析**：分析每日评论数
+- **弹幕分析**：分析弹幕情感倾向和分布时刻
 
 ### 安装依赖
 
@@ -20,33 +20,35 @@
 - `snownlp`：用于情感分析
 - `csv`：用于读取弹幕数据文件
 - `webbrowser`：用于自动打开生成的HTML文件
+- `scipy`：用于衡量两个变量之间的线性关系强度与方向
 
 安装：
 ```bash
-pip install requests pandas jieba snownlp pyecharts
+pip install requests pandas jieba snownlp pyecharts scipy
 ```
 
 ### 使用方法
 
 #### 1. 准备爬取出的弹幕数据文件
 
-将爬取的弹幕信息保存为 json 格式文件，文件的每一行应包含以下字段：
+将爬取的视频、评论、弹幕信息保存为 json 格式文件
 
 
 #### 2. 运行分析工具
 
 ```bash
-python bullet_emotion_analysis.py
-python bullet_emotion_distribution.py
-python highlight_search.py
+python bullet_emotion_analysis.py # 分析弹幕情感倾向，生成情感分析柱状图
+python view_date_analysis.py # 分析播放量与发布日期之间的线性关系
+python highlight_search.py # 从弹幕数量分析视频高光时刻
+python video_active.py # 从评论数量分析视频日活量变化
 ```
-
-运行后，会自动读取弹幕文件，进行情感分析和弹幕数量统计，最终生成几个 HTML 文件，展示情感分析柱状图、时间段弹幕数量柱状图，以及高光时刻信息。
 
 #### 3. 查看结果
 
-运行脚本后，生成的 `emotion_distribution.html` `highlight_distribution.html` 文件会自动在您的默认浏览器中打开。您将看到以下内容：
+运行脚本后，生成 `emotion_distribution.html` `highlight_distribution.html` `highlight_distribution.html` `daily_activity.html` 文件会根据 `bv` 号出现在爬取目录下每一个目录中。您将看到以下内容：
 
 - **情感分布图**：展示每种情感（非常负面、负面、中性、正面、非常正面）的弹幕数量。
 - **时间段弹幕数量图**：展示每个时间段内的弹幕数量，且会将弹幕最多的时间段标记为高光时刻并显示具体信息。
+- **播放量与发布日期散点图**：分析分析播放量与发布日期之间的线性关系强弱
+- **时间段评论数量图**：展示该视频每日评论数量，从中分析视频日活量变化
 
