@@ -4,7 +4,7 @@
 from pyecharts import options as opts
 from pyecharts.charts import Bar, Pie, Page
 from snownlp import SnowNLP
-import csv
+import json
 import webbrowser
 import os
 
@@ -14,12 +14,9 @@ def read_danmu_file(file_path):
 
     bullet_text = []
     with open(file_path, 'r', encoding='utf-8') as file:
-        csv_reader = csv.reader(file)
-        next(csv_reader)  # 跳过标题行
-
-        for row in csv_reader:
-            time, type, color, text = row
-            bullet_text.append(text)
+        data = json.load(file)
+        for item in data['danmaku']:
+            bullet_text.append(item['text']) 
     
     return bullet_text
 
@@ -77,7 +74,7 @@ def generate_emotion_pie_chart(emotions):
     return pie
 
 def main():
-    input_file_path = './danmus.csv'
+    input_file_path = './danmaku.json'
     emotion_chart_path = 'emotion_distribution.html'
 
     # 读取弹幕文本内容

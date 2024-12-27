@@ -2,19 +2,16 @@
 # 分析弹幕情感
 
 from snownlp import SnowNLP
-import csv
+import json
 
 def read_danmu_file(file_path):
     # 读取弹幕内容文件text字段
 
     bullet_text = []
     with open(file_path, 'r', encoding='utf-8') as file:
-        csv_reader = csv.reader(file)
-        next(csv_reader)  # 跳过标题行
-
-        for row in csv_reader:
-            time, type, color, text = row
-            bullet_text.append(text)
+        data = json.load(file)
+        for item in data['danmaku']:
+            bullet_text.append(item['text']) 
     
     return bullet_text
 
@@ -24,7 +21,7 @@ def analyze_emotion(danmakus):
     return emotions
 
 def main():
-    input_file_path = './danmus.csv'
+    input_file_path = './danmaku.json'
     danmakus = read_danmu_file(input_file_path)
 
     # 进行情感分析

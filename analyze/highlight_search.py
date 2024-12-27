@@ -1,4 +1,4 @@
-import csv
+import json
 from collections import defaultdict
 from pyecharts import options as opts
 from pyecharts.charts import Bar
@@ -8,12 +8,11 @@ import os
 def read_danmu_file(file_path):
     bullet_data = []
     with open(file_path, 'r', encoding='utf-8') as file:
-        csv_reader = csv.reader(file)
-        next(csv_reader)
-
-        for row in csv_reader:
-            time, type, color, text = row
-            bullet_data.append((float(time), text))
+        data = json.load(file)
+        for item in data['danmaku']:
+            time = float(item['time'])
+            text = item['text']
+            bullet_data.append((time, text))
     
     return bullet_data
 
@@ -56,7 +55,7 @@ def generate_highlight_info(high_light_time, max_bullet_count):
     return f'<b1><b style="color:red;">高光时刻：</b> 时间段: {high_light_time[0]:.2f}-{high_light_time[0]+2:.2f}秒<br><br><b>弹幕数量</b>: {max_bullet_count} 条。</b1>'
 
 def main():
-    input_file_path = './danmus.csv'
+    input_file_path = './danmaku.json'
     bullet_data = read_danmu_file(input_file_path)
 
     interval = 2  # 设置时间段间隔
