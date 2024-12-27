@@ -1,90 +1,93 @@
+import os
 import json
-import time
 from typing import List
 from crawler import BilibiliCrawler
-from search import get_page
 from concurrent.futures import ThreadPoolExecutor
-import queue
-import os
+import time
 
-class BilibiliDataCollector:
-    def __init__(self, keyword: str, max_pages: int = 10):
-        self.keyword = keyword
-        self.max_pages = max_pages
-        self.crawler = BilibiliCrawler()
-        self.pageQ = queue.Queue()
+def read_bv_ids(filename: str = 'result.txt') -> List[str]:
+    """从文件中读取BV号列表"""
+    # 获取当前文件所在目录
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    # 返回上一级目录
+    parent_dir = os.path.dirname(current_dir)
+    # 构建result.txt的完整路径
+    file_path = os.path.join(parent_dir, filename)
+    
+    if not os.path.exists(file_path):
+        print(f"文件 {file_path} 不存在！")
+        print("请按以下步骤操作：")
+        print("1. 先运行 search.py 或 search_hot.py 生成视频列表")
+        print("2. 确保 result.txt 文件已生成在正确位置")
+        return []
         
-    def collect_bv_ids(self) -> List[str]:
-        """收集视频BV号"""
-        # 清空结果文件
-        with open('result.txt', 'w', encoding='utf-8') as f:
-            f.write("")
-            
-        # 初始化页码队列
-        for i in range(1, self.max_pages + 1):
-            self.pageQ.put(i)
-        
-        # 使用线程池搜索视频
-        with ThreadPoolExecutor(max_workers=3) as executor:
-            while not self.pageQ.empty():
-                page = self.pageQ.get()
-                executor.submit(get_page, page)
-        
-        # 读取结果文件中的BV号
-        bv_ids = []
-        with open('result.txt', 'r', encoding='utf-8') as f:
-            bv_ids = [line.strip() for line in f if line.strip()]
-            
+    with open(file_path, 'r', encoding='utf-8') as f:
+        bv_ids = [line.strip() for line in f if line.strip()]
+        print(f"成功从 {filename} 读取到 {len(bv_ids)} 个BV号")
         return bv_ids
+
+def create_output_dir(dirname: str = 'crawled_data'):
+    """创建输出目录"""
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+    return dirname
+
+def process_video(args):
+    """处理单个视频的数据爬取"""
+    crawler, bv_id, video_dir, index, total = args
+    try:
+        print(f"\n正在处理第 {index}/{total} 个视频 (BV号: {bv_id})")
+        
+        if not os.path.exists(video_dir):
+            os.makedirs(video_dir)
+        
+        # 保存数据为JSON格式
+        crawler.save_video_info(bv_id, os.path.join(video_dir, 'video_info.json'))
+        crawler.save_comments(bv_id, os.path.join(video_dir, 'comments.json'))
+        crawler.save_danmaku(bv_id, os.path.join(video_dir, 'danmaku.json'))
+        
+        print(f"视频 {bv_id} 的数据已保存到 {video_dir}")
+        return True
+        
+    except Exception as e:
+        print(f"处理视频 {bv_id} 时出错: {str(e)}")
+        return False
+
+def main():
+    # 读取BV号列表
+    bv_ids = read_bv_ids()
+    if not bv_ids:
+        return
     
-    def collect_video_data(self, bv_ids: List[str], output_dir: str = 'data'):
-        """并行收集视频数据"""
-        # 创建输出目录
-        os.makedirs(output_dir, exist_ok=True)
-        
-        def process_video(bv_id: str):
-            try:
-                print(f"\n开始收集视频 {bv_id} 的数据...")
-                
-                # 创建视频专属目录
-                video_dir = os.path.join(output_dir, bv_id)
-                os.makedirs(video_dir, exist_ok=True)
-                
-                # 获取视频信息
-                video_info = self.crawler.get_video_info(bv_id)
-                if video_info:
-                    with open(os.path.join(video_dir, 'video_info.json'), 'w', encoding='utf-8') as f:
-                        json.dump(video_info, f, ensure_ascii=False, indent=2)
-                
-                # 获取评论
-                self.crawler.save_comments(bv_id, os.path.join(video_dir, 'comments.json'))
-                
-                # 获取弹幕
-                self.crawler.save_danmaku(bv_id, os.path.join(video_dir, 'danmaku.csv'))
-                
-            except Exception as e:
-                print(f"处理视频 {bv_id} 时出错: {str(e)}")
-        
-        # 使用线程池并行处理视频
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            executor.map(process_video, bv_ids)
+    print(f"共读取到 {len(bv_ids)} 个视频的BV号")
     
-    def run(self):
-        """运行数据收集流程"""
-        print(f"开始收集关键词 '{self.keyword}' 相关的视频数据...")
-        
-        # 1. 收集BV号
-        bv_ids = self.collect_bv_ids()
-        print(f"共找到 {len(bv_ids)} 个视频")
-        
-        # 2. 收集视频数据
-        output_dir = f'data_{self.keyword}_{time.strftime("%Y%m%d_%H%M%S")}'
-        self.collect_video_data(bv_ids, output_dir)
-        
-        print(f"\n数据收集完成！数据保存在 {output_dir} 目录下")
+    # 创建输出目录
+    output_dir = create_output_dir()
+    
+    # 初始化爬虫
+    crawler = BilibiliCrawler()
+    
+    # 准备任务参数
+    tasks = [
+        (crawler, bv_id, os.path.join(output_dir, bv_id), i+1, len(bv_ids))
+        for i, bv_id in enumerate(bv_ids)
+    ]
+    
+    # 使用线程池并行处理
+    start_time = time.time()
+    success_count = 0
+    
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        results = list(executor.map(process_video, tasks))
+        success_count = sum(1 for r in results if r)
+    
+    end_time = time.time()
+    duration = end_time - start_time
+    
+    print(f"\n爬取完成！")
+    print(f"成功爬取: {success_count}/{len(bv_ids)} 个视频")
+    print(f"总耗时: {duration:.2f} 秒")
+    print(f"平均每个视频耗时: {duration/len(bv_ids):.2f} 秒")
 
 if __name__ == '__main__':
-    # 使用示例
-    keyword = "原神"  # 设置搜索关键词
-    collector = BilibiliDataCollector(keyword, max_pages=5)  # 设置爬取前5页的视频
-    collector.run() 
+    main() 

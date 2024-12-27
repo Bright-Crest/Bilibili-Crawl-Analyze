@@ -1,40 +1,81 @@
+import os
+import json
+import time
+import random
 import requests
 import time
-import json
-from typing import Dict, List, Optional
 import pandas as pd
 import xml.etree.ElementTree as ET
-import re
+from typing import Dict, List
 
 class BilibiliCrawler:
     def __init__(self):
         """初始化爬虫，设置必要的请求头和接口URL"""
+        cookie = self._get_cookie_from_search()
+        
+        # B站支持的User-Agent列表
+        self.user_agents = [
+            # Chrome
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            # Firefox
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.3; rv:123.0) Gecko/20100101 Firefox/123.0',
+            # Edge
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0'
+        ]
+        
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'User-Agent': random.choice(self.user_agents),
             'Referer': 'https://www.bilibili.com',
-            'Cookie': 'CURRENT_FNVAL=4048; b_lsid=10B4109FC_18C435D9C95; buvid_fp=45b2193579703f41227e409a2d07e448',
+            'Cookie': cookie,
             'Origin': 'https://www.bilibili.com'
         }
+        
         self.video_info_url = "https://api.bilibili.com/x/web-interface/view"
         self.comment_url = "https://api.bilibili.com/x/v2/reply/main"
         self.danmaku_url = "https://api.bilibili.com/x/v1/dm/list.so"
 
+    def _make_request(self, url: str, params: Dict = None, retry_count: int = 3) -> requests.Response:
+        """统一的请求处理方法"""
+        for i in range(retry_count):
+            try:
+                # 每次请求都更新User-Agent
+                self.headers['User-Agent'] = random.choice(self.user_agents)
+                
+                # 降低延迟时间
+                time.sleep(random.uniform(0.2, 0.5))  # 200-500ms的随机延迟
+                
+                response = requests.get(
+                    url,
+                    params=params,
+                    headers=self.headers,
+                    timeout=5  # 减少超时时间
+                )
+                
+                if response.status_code == 412:
+                    print(f"请求被拦截，更换User-Agent后重试...")
+                    time.sleep(random.uniform(1, 2))  # 被拦截时稍微多等一下
+                    continue
+                    
+                if response.status_code == 200:
+                    return response
+                    
+            except Exception as e:
+                print(f"请求出错 (尝试 {i + 1}/{retry_count}): {str(e)}")
+                if i < retry_count - 1:
+                    time.sleep(random.uniform(0.5, 1))
+                    continue
+                    
+        raise Exception("请求失败，已达到最大重试次数")
+
     def get_video_info(self, bv_id: str) -> Dict:
-        """获取视频基本信息
-        
-        Args:
-            bv_id: 视频的BV号
-            
-        Returns:
-            包含视频信息的字典
-        """
+        """获取视频基本信息"""
         try:
             params = {'bvid': bv_id}
-            response = requests.get(
-                self.video_info_url, 
-                params=params, 
-                headers=self.headers
-            )
+            response = self._make_request(self.video_info_url, params)
             data = response.json()
             
             if data['code'] == 0:
@@ -50,7 +91,8 @@ class BilibiliCrawler:
                     'author': {
                         'name': info['owner']['name'],
                         'uid': info['owner']['mid']
-                    }
+                    },
+                    'aid': info['aid']
                 }
             else:
                 raise Exception(f"获取视频信息失败: {data['message']}")
@@ -58,6 +100,87 @@ class BilibiliCrawler:
         except Exception as e:
             print(f"获取视频信息时发生错误: {str(e)}")
             return {}
+
+    def get_danmaku(self, bv_id: str) -> List[Dict]:
+        """获取视频弹幕"""
+        try:
+            # 先获取cid
+            video_info = self.get_video_info(bv_id)
+            if not video_info:
+                raise Exception("获取视频信息失败")
+            
+            # 获取视频的cid
+            params = {'bvid': bv_id}
+            response = self._make_request(self.video_info_url, params)
+            data = response.json()
+            
+            if data['code'] != 0:
+                raise Exception(f"获取cid失败: {data['message']}")
+            
+            cid = data['data']['cid']
+            
+            # 获取弹幕XML
+            danmaku_url = f"https://comment.bilibili.com/{cid}.xml"
+            response = self._make_request(danmaku_url)
+            response.encoding = 'utf-8'
+            
+            # 解析XML
+            root = ET.fromstring(response.text)
+            danmaku_list = []
+            
+            for d in root.findall('d'):
+                try:
+                    p = d.get('p', '').split(',')
+                    if len(p) >= 8:
+                        danmaku_list.append({
+                            'time': float(p[0]),
+                            'type': int(p[1]),
+                            'color': int(p[3]),
+                            'timestamp': int(p[4]),
+                            'pool': int(p[5]),
+                            'user_hash': p[6],
+                            'dmid': p[7],
+                            'text': d.text or ''
+                        })
+                except (ValueError, IndexError) as e:
+                    print(f"解析弹幕数据出错: {str(e)}")
+                    continue
+                
+            print(f"成功获取 {len(danmaku_list)} 条弹幕")
+            return danmaku_list
+            
+        except Exception as e:
+            print(f"获取弹幕时发生错误: {str(e)}")
+            return []
+
+    def _get_cookie_from_search(self) -> str:
+        """从search.py文件中读取Cookie"""
+        try:
+            # 获取当前文件所在目录
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            # search.py在同一目录下
+            search_path = os.path.join(current_dir, 'search.py')
+            
+            if not os.path.exists(search_path):
+                print(f"找不到search.py文件: {search_path}")
+                return ''
+                
+            with open(search_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+                # 查找Cookie变量的定义
+                cookie_start = content.find('Cookie = "') + len('Cookie = "')
+                cookie_end = content.find('"', cookie_start)
+                
+                if cookie_start > 0 and cookie_end > cookie_start:
+                    return content[cookie_start:cookie_end]
+                else:
+                    print("在search.py中找不到Cookie配置")
+                    return ''
+                    
+        except Exception as e:
+            print(f"无法从search.py读取Cookie: {str(e)}")
+            print("请确保search.py中已配置正确的Cookie")
+            return ''
 
     def get_comments(self, bv_id: str, page: int = 1) -> Dict:
         """获取视频评论"""
@@ -75,16 +198,7 @@ class BilibiliCrawler:
                 'nohot': 1  # 不包含热门评论
             }
             
-            response = requests.get(
-                self.comment_url, 
-                params=params, 
-                headers=self.headers
-            )
-            
-            # 打印请求URL和响应，用于调试
-            print(f"请求URL: {response.url}")
-            print(f"响应状态码: {response.status_code}")
-            
+            response = self._make_request(self.comment_url, params)
             data = response.json()
             
             if data['code'] == 0:
@@ -120,7 +234,6 @@ class BilibiliCrawler:
                             })
                     result['comments'].append(comment)
                 
-                # 打印调试信息
                 print(f"当前页评论数: {len(result['comments'])}")
                 print(f"总评论数: {total}")
                 
@@ -131,30 +244,6 @@ class BilibiliCrawler:
         except Exception as e:
             print(f"获取评论时发生错误: {str(e)}")
             return {'comments': [], 'total': 0}
-
-    def get_danmaku(self, bv_id: str) -> List[str]:
-        """获取视频弹幕
-        
-        Args:
-            bv_id: 视频的BV号
-            
-        Returns:
-            弹幕列表
-        """
-        try:
-            cid = self._get_cid(bv_id)
-            response = requests.get(
-                f"https://comment.bilibili.com/{cid}.xml", 
-                headers=self.headers
-            )
-            response.encoding = 'utf-8'
-            # 这里需要解析XML格式的弹幕数据
-            # 简单返回原始数据，实际使用时需要进行解析
-            return response.text
-            
-        except Exception as e:
-            print(f"获取弹幕时发生错误: {str(e)}")
-            return []
 
     def _bv_to_aid(self, bv_id: str) -> int:
         """BV号转AV号（aid）的辅助方法
@@ -206,76 +295,79 @@ class BilibiliCrawler:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
     def save_comments(self, bv_id: str, filename: str = 'comments.json'):
-        """保存视频评论到JSON文件"""
-        all_comments = []
-        page = 1
-        total = None
-        retry_count = 0
-        max_retries = 3
-        
-        while True:
-            try:
-                result = self.get_comments(bv_id, page)
-                comments = result['comments']
-                
-                if total is None:
-                    total = result['total']
-                    print(f"该视频共有{total}条评论")
-                
-                if not comments:
-                    break  # 如果没有评论了就退出
-                
-                all_comments.extend(comments)
-                print(f"已获取第{page}页评论，当前共{len(all_comments)}/{total}条")
-                
-                if len(all_comments) >= total or len(all_comments) >= 1000:  # 限制最多获取1000条评论
-                    break
-                    
-                page += 1
-                time.sleep(1)  # 减少等待时间
-                
-            except Exception as e:
-                retry_count += 1
-                if retry_count >= max_retries:
-                    print(f"连续{max_retries}次出错，停止获取")
-                    break
-                print(f"获取第{page}页评论时出错: {str(e)}")
-                time.sleep(2)
-        
-        if all_comments:
-            with open(filename, 'w', encoding='utf-8') as f:
-                json.dump(all_comments, f, ensure_ascii=False, indent=2)
-            print(f"已保存{len(all_comments)}条评论到{filename}")
-        else:
-            print("未获取到任何评论，跳过保存")
-
-    def save_danmaku(self, bv_id: str, filename: str = 'danmus.csv'):
-        """保存视频弹幕到CSV文件
-        
-        Args:
-            bv_id: 视频的BV号
-            filename: 保存的文件名
-        """
+        """保存评论到JSON，包含完整的评论信息"""
         try:
-            xml_content = self.get_danmaku(bv_id)
-            root = ET.fromstring(xml_content)
+            comments_data = self.get_comments(bv_id)
+            if not comments_data or not comments_data['comments']:
+                print("未获取到评论数据")
+                return
             
-            danmus = []
-            for d in root.findall('d'):
-                p_attrs = d.get('p').split(',')
-                danmu = {
-                    'time': float(p_attrs[0]),  # 弹幕出现时间
-                    'type': int(p_attrs[1]),    # 弹幕类型
-                    'color': int(p_attrs[3]),   # 弹幕颜色
-                    'text': d.text              # 弹幕内容
+            # 构建更详细的评论数据结构
+            result = {
+                'total_count': comments_data['total'],
+                'bvid': bv_id,
+                'comments': []
+            }
+            
+            for comment in comments_data['comments']:
+                comment_info = {
+                    'text': comment['text'],
+                    'like': comment['like'],
+                    'user': {
+                        'name': comment['user'],
+                        'time': comment['time'],
+                    },
+                    'replies': [{
+                        'text': reply['text'],
+                        'like': reply['like'],
+                        'user': {
+                            'name': reply['user'],
+                            'time': reply['time']
+                        },
+                        'reply_to': comment['user']
+                    } for reply in comment.get('replies', [])]
                 }
-                danmus.append(danmu)
+                result['comments'].append(comment_info)
             
-            # 转换为DataFrame并保存为CSV
-            df = pd.DataFrame(danmus)
-            df.sort_values('time', inplace=True)  # 按时间排序
-            df.to_csv(filename, index=False, encoding='utf-8')
-            print(f"已保存{len(danmus)}条弹幕到{filename}")
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(result, f, ensure_ascii=False, indent=2)
+            print(f"评论数据已保存到 {filename}")
+            
+        except Exception as e:
+            print(f"保存评论时发生错误: {str(e)}")
+
+    def save_danmaku(self, bv_id: str, filename: str = 'danmaku.json'):
+        """保存弹幕到JSON，包含完整的弹幕信息"""
+        try:
+            danmaku_list = self.get_danmaku(bv_id)
+            if not danmaku_list:
+                print("未获取到弹幕数据")
+                return
+            
+            result = {
+                'bvid': bv_id,
+                'total_count': len(danmaku_list),
+                'danmaku': [{
+                    'time': dm['time'],
+                    'type': dm['type'],
+                    'color': dm['color'],
+                    'timestamp': dm['timestamp'],
+                    'pool': dm['pool'],
+                    'user_hash': dm['user_hash'],
+                    'dmid': dm['dmid'],
+                    'text': dm['text'],
+                    'font_size': 25,  # 默认字体大小
+                    'mode': {
+                        1: '滚动',
+                        4: '底部',
+                        5: '顶部'
+                    }.get(dm['type'], '未知')
+                } for dm in danmaku_list]
+            }
+            
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(result, f, ensure_ascii=False, indent=2)
+            print(f"弹幕数据已保存到 {filename}")
             
         except Exception as e:
             print(f"保存弹幕时发生错误: {str(e)}")
@@ -295,6 +387,22 @@ class BilibiliCrawler:
         
         # 获取并保存弹幕
         self.save_danmaku(bv_id)
+
+    def save_video_info(self, bv_id: str, filename: str = 'video_info.json'):
+        """保存视频信息到JSON，保留所有可能的信息"""
+        try:
+            video_info = self.get_video_info(bv_id)
+            if not video_info:
+                print("未获取到视频信息")
+                return
+            
+            # 保存完整的原始数据
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(video_info, f, ensure_ascii=False, indent=2)
+            print(f"视频信息已保存到 {filename}")
+            
+        except Exception as e:
+            print(f"保存视频信息时发生错误: {str(e)}")
 
 # 使用示例
 if __name__ == "__main__":
