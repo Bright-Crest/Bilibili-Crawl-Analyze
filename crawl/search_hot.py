@@ -41,7 +41,7 @@ def get_hot_video(page=1, max_retries=3):
                 
             video_list = json_data['data']['list']
             
-            with open('hot_videos.txt', 'a', encoding='utf-8') as f:
+            with open('result.txt', 'a', encoding='utf-8') as f:
                 for video in video_list:
                     bvid = video['bvid']
                     f.write(f"{bvid}\n")
