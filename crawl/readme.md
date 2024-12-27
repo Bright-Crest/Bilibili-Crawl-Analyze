@@ -60,7 +60,7 @@ crawled_data/
 {
     "title": "视频标题",
     "desc": "视频描述",
-    "pubdate": "发布时间戳",
+    "pubdate": "发布时间戳（Unix时间戳，例如：1721986650）",
     "view": "播放量",
     "like": "点赞数",
     "coin": "投币数",
@@ -122,6 +122,16 @@ crawled_data/
         }
     ]
 }
+```
+时间戳转换示例：
+```python
+import time
+from datetime import datetime
+
+# Unix时间戳转换为可读时间
+timestamp = 1721986650
+readable_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+print(f"发布时间: {readable_time}")  # 输出格式：2024-03-26 12:30:50
 ```
 
 ## 项目结构
