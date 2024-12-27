@@ -404,8 +404,15 @@ class BilibiliCrawler:
         except Exception as e:
             print(f"保存视频信息时发生错误: {str(e)}")
 
-# 使用示例
+# 仅用于测试和示例
 if __name__ == "__main__":
+    """
+    这是一个简单的测试用例，实际使用请通过 main.py 运行
+    用法示例：
+    - 测试单个视频爬取
+    - 开发时快速调试
+    - 作为API使用参考
+    """
     crawler = BilibiliCrawler()
-    bv_id = "BV1cniBY6EJk"
-    crawler.crawl_all(bv_id)
+    test_bv_id = "BV1cniBY6EJk"
+    crawler.crawl_all(test_bv_id)
