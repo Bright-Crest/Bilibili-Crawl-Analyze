@@ -21,10 +21,12 @@
 - `csv`：用于读取弹幕数据文件
 - `webbrowser`：用于自动打开生成的HTML文件
 - `scipy`：用于衡量两个变量之间的线性关系强度与方向
+- `matplotlib`: 画图
+- `scikit-learn`: k-means聚类
 
 安装：
 ```bash
-pip install requests pandas jieba snownlp pyecharts scipy
+pip install requests pandas jieba snownlp pyecharts scipy matplotlib scikit-learn
 ```
 
 ### 使用方法
