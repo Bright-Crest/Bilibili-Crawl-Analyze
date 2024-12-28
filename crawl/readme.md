@@ -4,7 +4,8 @@
 
 #### 1.1 安装必要软件包
 ```bash
-pip3 install requests
+pip install requests
+pip install fake-useragent
 ```
 
 #### 1.2 获取B站Cookie
