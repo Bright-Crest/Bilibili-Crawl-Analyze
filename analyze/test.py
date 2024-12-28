@@ -6,6 +6,12 @@ import word_cloud
 import kmeans
 
 
+import highlight_search
+import bullet_emotion_analysis
+import view_date_analysis
+import video_active
+
+
 def get_word_freq(input_file, word_freq_file):
     cleaned_file = os.path.join(os.path.dirname(input_file), ".cleaned_" + os.path.basename(input_file).rsplit('.', 1)[0] + ".txt")
     clean.clean(input_file, cleaned_file)
@@ -31,6 +37,18 @@ def get_kmeans_result(input_file_list, output_file):
     os.remove(cleaned_file)
     os.remove(word_split_file)
 
+
+def get_highlight_search():
+    highlight_search.main()
+
+def get_bullet_emotion_analysis():
+    bullet_emotion_analysis.main()
+
+def get_view_date_analysis():
+    view_date_analysis.main()
+
+def get_video_active():
+    video_active.main()
 
 def test():
     crawled_data_dir = './crawled_data'
@@ -95,6 +113,11 @@ def test():
     print('')
     all_kmeans = os.path.join(overall_analysis_output_dir, "all_kmeans.txt")
     get_kmeans_result(danmaku_file_list + comments_file_list, all_kmeans)
+
+    get_highlight_search()
+    get_bullet_emotion_analysis()
+    get_view_date_analysis()
+    get_video_active()
 
 if __name__ == "__main__":
     test()
