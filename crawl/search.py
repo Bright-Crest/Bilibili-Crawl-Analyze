@@ -12,9 +12,7 @@ key = "原神" # 搜索关键词
 # 在浏览器登录后f12查看cookie，填入下面的变量中
 Cookie = "YOUR COOKIE"
 
-def get_page(page, keyword=None, max_retries=3):
-    if keyword is None:
-        keyword = "原神"  # 默认关键词
+def get_page(page, max_retries=3):
     for retry in range(max_retries):
         try:
             headers = {
@@ -26,7 +24,7 @@ def get_page(page, keyword=None, max_retries=3):
             
             params = {
                 'search_type': 'video',
-                'keyword': keyword,
+                'keyword': key,
                 'page': page,
                 'page_size': 20,
             }

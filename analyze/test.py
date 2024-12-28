@@ -53,7 +53,7 @@ def get_video_active():
 def test():
     num = 50
     crawled_data_dir = './crawled_data'
-    overall_analysis_output_dir = './overall_analysis_output'
+    overall_analysis_output_dir = './analysis_data'
     if not os.path.isdir(overall_analysis_output_dir):
         os.mkdir(overall_analysis_output_dir)
     

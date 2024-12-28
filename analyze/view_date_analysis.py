@@ -85,7 +85,7 @@ def main():
     })
 
     # 增加字体大小与列宽，保存到CSV文件
-    video_data.to_csv('./overall_analysis_output/view_time_relation.csv', index=False)
+    video_data.to_csv('./analysis_data/view_time_relation.csv', index=False)
     print("所有视频的播放量与发布时间的数据已保存到 'view_time_relation.csv'")
 
     # 显示表格的一部分（更好地查看数据）
@@ -93,7 +93,7 @@ def main():
 
     # 生成并保存散点图
     scatter_chart = generate_scatter_chart(all_pubdates, all_views, correlation)
-    scatter_chart_path = './overall_analysis_output/view_time_relation.html'
+    scatter_chart_path = './analysis_data/view_time_relation.html'
     scatter_chart.render(scatter_chart_path)
 
     # 自动打开生成的散点图
