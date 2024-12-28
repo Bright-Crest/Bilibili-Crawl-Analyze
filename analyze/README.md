@@ -43,6 +43,7 @@ python bullet_emotion_analysis.py # 分析弹幕情感倾向，生成情感分�
 python view_date_analysis.py # 分析播放量与发布日期之间的线性关系
 python highlight_search.py # 从弹幕数量分析视频高光时刻
 python video_active.py # 从评论数量分析视频日活量变化
+python test.py # 进行词频、词云、kmeans分析
 ```
 
 #### 3. 查看结果

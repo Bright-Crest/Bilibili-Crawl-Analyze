@@ -4,6 +4,18 @@ import os
 import utils
 
 
+#定义机械压缩去重函数
+def compress(st):
+    for i in range(1,int(len(st)/2)+1):
+        for j in range(len(st)):
+            if st[j:j+i] == st[j+i:j+2*i]:
+                k = j + i
+                while st[k:k+i] == st[k+i:k+2*i] and k<len(st): 
+                    k = k + i
+                st = st[:j] + st[k:]   
+    return st
+
+
 def clean_content(text_list):
     """
     清洗弹幕内容，去除每行前面的无效内容
@@ -13,6 +25,7 @@ def clean_content(text_list):
     for text in text_list:
         # 去除每行前面的无效内容，只保留中文字符、英文字符、数字和标点符号
         text = re.sub(r'^[^\u4e00-\u9fa5a-zA-Z0-9，。！？、；：‘’“”（）【】《》]*', '', text)
+        text = compress(text)
         # 去除空白行
         if text.strip():
             cleaned_text_list.append(text.strip())

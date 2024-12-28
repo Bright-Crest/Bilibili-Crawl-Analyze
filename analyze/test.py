@@ -27,7 +27,7 @@ def get_kmeans_result(input_file_list, output_file):
         clean.clean(file, cleaned_file, is_append=True)
     word_split_file = os.path.join(os.path.dirname(output_file), ".split_text.txt")
     word_frequency.word_split(cleaned_file, word_split_file)
-    kmeans.apply_kmeans(word_split_file, output_file, 5)
+    kmeans.apply_kmeans(word_split_file, output_file)
     os.remove(cleaned_file)
     os.remove(word_split_file)
 
