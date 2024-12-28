@@ -4,6 +4,11 @@ from pyecharts.commons.utils import JsCode
 import json
 import os
 
+def read_video_info(file_path):
+    # 读取视频信息文件
+    with open(file_path, 'r', encoding='utf-8') as file:
+        video_info = json.load(file)
+    return video_info
 
 def read_danmu_file(file_path):
     bullet_data = []
@@ -122,7 +127,7 @@ def analyze_video(bv_number, video_path):
     bullet_count_chart = generate_bullet_count_chart(x_data, y_data, bv_number)
 
     # 创建输出目录
-    output_dir = os.path.join('crawled_data', bv_number, 'analyze')
+    output_dir = os.path.join('analysis_data', bv_number)
     os.makedirs(output_dir, exist_ok=True)
 
     # 保存图表
@@ -131,10 +136,28 @@ def analyze_video(bv_number, video_path):
 
     print(f"视频 {bv_number} 的分析结果已保存到 {highlight_chart_path}")
 
+def get_top_videos(crawled_data_dir, top_n=10):
+    # 获取播放量最高的 n 个视频
+    video_view_counts = []
+    for bv_number in os.listdir(crawled_data_dir):
+        bv_path = os.path.join(crawled_data_dir, bv_number)
+        if os.path.isdir(bv_path):
+            video_info_file_path = os.path.join(bv_path, 'video_info.json')
+            if os.path.exists(video_info_file_path):
+                video_info = read_video_info(video_info_file_path)
+                view_count = video_info.get('view', 0)
+                video_view_counts.append((bv_number, view_count))
+
+    # 按照播放量降序排序并选择前 n 个视频
+    top_videos = sorted(video_view_counts, key=lambda x: x[1], reverse=True)[:top_n]
+    return [video[0] for video in top_videos]
+
 def main():
     crawled_data_dir = './crawled_data'
+
+    top_videos = get_top_videos(crawled_data_dir, top_n=10)
     
-    for bv_number in os.listdir(crawled_data_dir):
+    for bv_number in top_videos:
         bv_path = os.path.join(crawled_data_dir, bv_number)
         if os.path.isdir(bv_path):
             analyze_video(bv_number, bv_path)
