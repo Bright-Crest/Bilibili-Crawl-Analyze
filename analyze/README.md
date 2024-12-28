@@ -10,6 +10,7 @@
 - **视频分析**：分析视频播放量
 - **评论分析**：分析每日评论数
 - **弹幕分析**：分析弹幕情感倾向和分布时刻
+- 
 
 ### 安装依赖
 
@@ -35,23 +36,30 @@ pip install requests pandas jieba snownlp pyecharts scipy matplotlib scikit-lear
 
 将爬取的视频、评论、弹幕信息保存为 json 格式文件
 
+#### 2. 功能函数说明
 
-#### 2. 运行分析工具
+- bullet_emotion_analysis.py-----分析弹幕情感倾向，生成情感分析柱状图
+- view_date_analysis.py----------分析播放量与发布日期之间的线性关系
+- highlight_search.py------------从弹幕数量分析视频高光时刻
+- video_active.py----------------从评论数量分析视频日活量变化
+- clean.py-----------------------清洗文本数据
+- word_frequency.py--------------词频
+- word_cloud.py------------------词云
+- kmeans.py----------------------对文件进行kmeans聚类算法
+
+#### 3. 运行分析工具
 
 ```bash
-python bullet_emotion_analysis.py # 分析弹幕情感倾向，生成情感分析柱状图
-python view_date_analysis.py # 分析播放量与发布日期之间的线性关系
-python highlight_search.py # 从弹幕数量分析视频高光时刻
-python video_active.py # 从评论数量分析视频日活量变化
-python test.py # 进行词频、词云、kmeans分析
+python ./analyze/test.py # 运行测试文件，生成分析数据
 ```
 
-#### 3. 查看结果
+#### 4. 查看结果
 
-运行脚本后，生成 `emotion_distribution.html` `highlight_distribution.html` `highlight_distribution.html` `daily_activity.html` 文件会根据 `bv` 号出现在爬取目录下每一个目录中。您将看到以下内容：
+运行脚本后，生成 `emotion_distribution.html` `highlight_distribution.html` `daily_activity.html` 文件会根据 `bv` 号出现在爬取目录下每一个目录中。
+而 `word_cloud.html` `view_time_relation.html`等文件出现在根目录下的 `/overall_analysis_output`目录下，您将看到以下内容：
 
 - **弹幕情感分布**：展示每种情感（非常负面、负面、中性、正面、非常正面）的弹幕数量和比例。
 - **弹幕时间分布图**：展示每个时间段内的弹幕数量，且会将弹幕最多的时间段标记为高光时刻并显示具体信息。
 - **播放量与发布日期散点图**：分析分析播放量与发布日期之间的线性关系强弱
 - **时间段评论数量图**：展示该视频每日评论数量，从中分析视频日活量变化
-
+- 

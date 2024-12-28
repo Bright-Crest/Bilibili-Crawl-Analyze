@@ -10,9 +10,9 @@ def read_bv_ids(filename: str = 'result.txt') -> List[str]:
     # 获取当前文件所在目录
     current_dir = os.path.dirname(os.path.abspath(__file__))
     # 返回上一级目录
-    parent_dir = os.path.dirname(current_dir)
+    #parent_dir = os.path.dirname(current_dir)
     # 构建result.txt的完整路径
-    file_path = os.path.join(parent_dir, filename)
+    file_path = os.path.join(current_dir, filename)
     
     if not os.path.exists(file_path):
         print(f"文件 {file_path} 不存在！")
