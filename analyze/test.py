@@ -51,6 +51,7 @@ def get_video_active():
     video_active.main()
 
 def test():
+    num = 50
     crawled_data_dir = './crawled_data'
     overall_analysis_output_dir = './overall_analysis_output'
     if not os.path.isdir(overall_analysis_output_dir):
@@ -80,7 +81,7 @@ def test():
     
     danmaku_file_list = []
     comments_file_list = []
-    for bv_number in os.listdir(crawled_data_dir):
+    for bv_number in os.listdir(crawled_data_dir)[0:num]:
         bv_path = os.path.join(crawled_data_dir, bv_number)
         if os.path.isdir(bv_path):
             video_info = os.path.join(bv_path, "video_info.json")
@@ -111,6 +112,12 @@ def test():
     word_cloud.create_word_cloud(all_wf, all_wc)
 
     print('')
+    danmaku_kmeans = os.path.join(overall_analysis_output_dir, "danmaku_kmeans.txt")
+    get_kmeans_result(danmaku_file_list + comments_file_list, danmaku_kmeans)
+    print('')
+    commments_kmeans = os.path.join(overall_analysis_output_dir, "commments_kmeans.txt")
+    get_kmeans_result(danmaku_file_list + comments_file_list, commments_kmeans)
+    print('')
     all_kmeans = os.path.join(overall_analysis_output_dir, "all_kmeans.txt")
     get_kmeans_result(danmaku_file_list + comments_file_list, all_kmeans)
 
@@ -118,6 +125,7 @@ def test():
     get_bullet_emotion_analysis()
     get_view_date_analysis()
     get_video_active()
+
 
 if __name__ == "__main__":
     test()

@@ -80,7 +80,7 @@ def apply_kmeans(text_file, output_file):
     X_pca = pca.fit_transform(X.toarray())
 
     plt.figure(figsize=(10, 8))
-    colors = ['red', 'blue', 'green', 'purple', 'orange']
+    colors = ['red', 'blue', 'green', 'purple', 'orange', 'yellow', 'brown']
     for i in range(num_clusters):
         points = X_pca[cluster==i]
         plt.scatter(points[:, 0], points[:, 1], s=50, c=colors[i], label=f"cluster {i}")

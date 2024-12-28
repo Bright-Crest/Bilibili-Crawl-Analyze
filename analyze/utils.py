@@ -20,6 +20,6 @@ def read_comments_file(file_path):
         for item in data['comments']:
             text_list.append(item['text']) 
             for reply in item['replies']:
-                text_list.append(reply['text'])
+                text_list.append(reply['text'].split(':', 1)[-1])
     
     return text_list
