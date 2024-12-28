@@ -7,28 +7,35 @@ import time
 import pandas as pd
 import xml.etree.ElementTree as ET
 from typing import Dict, List
+from fake_useragent import UserAgent
 
 class BilibiliCrawler:
     def __init__(self):
         """初始化爬虫，设置必要的请求头和接口URL"""
         cookie = self._get_cookie_from_search()
         
-        # B站支持的User-Agent列表
-        self.user_agents = [
-            # Chrome
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            # Firefox
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.3; rv:123.0) Gecko/20100101 Firefox/123.0',
-            # Edge
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0'
-        ]
-        
+        try:
+            # 优先使用fake-useragent
+            self.ua = UserAgent()
+            self.use_fake_ua = True
+        except:
+            # 如果失败，回退到硬编码列表
+            self.use_fake_ua = False
+            self.user_agents = [
+                # Chrome
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                # Firefox
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0',
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.3; rv:123.0) Gecko/20100101 Firefox/123.0',
+                # Edge
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0',
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0'
+            ]
+            
         self.headers = {
-            'User-Agent': random.choice(self.user_agents),
+            'User-Agent': self._get_random_ua(),
             'Referer': 'https://www.bilibili.com',
             'Cookie': cookie,
             'Origin': 'https://www.bilibili.com'
@@ -38,12 +45,22 @@ class BilibiliCrawler:
         self.comment_url = "https://api.bilibili.com/x/v2/reply/main"
         self.danmaku_url = "https://api.bilibili.com/x/v1/dm/list.so"
 
+    def _get_random_ua(self):
+        """获取随机UA"""
+        if self.use_fake_ua:
+            try:
+                return self.ua.random
+            except:
+                self.use_fake_ua = False
+                
+        return random.choice(self.user_agents)
+        
     def _make_request(self, url: str, params: Dict = None, retry_count: int = 3) -> requests.Response:
         """统一的请求处理方法"""
         for i in range(retry_count):
             try:
                 # 每次请求都更新User-Agent
-                self.headers['User-Agent'] = random.choice(self.user_agents)
+                self.headers['User-Agent'] = self._get_random_ua()
                 
                 # 降低延迟时间
                 time.sleep(random.uniform(0.2, 0.5))  # 200-500ms的随机延迟
@@ -408,7 +425,7 @@ class BilibiliCrawler:
 if __name__ == "__main__":
     """
     这是一个简单的测试用例，实际使用请通过 main.py 运行
-    用法示例：
+    用法示例
     - 测试单个视频爬取
     - 开发时快速调试
     - 作为API使用参考
