@@ -17,7 +17,7 @@ pip3 install requests
 
 #### 方式一：根据关键词搜索
 ```bash
-python search.py
+python crawl/search.py
 ```
 - 运行前请确保已在search.py中设置了正确的Cookie
 - 默认搜索关键词为"原神"，可以在代码中修改
@@ -25,14 +25,14 @@ python search.py
 
 #### 方式二：获取热门视频
 ```bash
-python search_hot.py
+python crawl/search_hot.py
 ```
 - 会自动爬取B站热门视频列表
 - 结果同样保存到result.txt文件中
 
 ### 3. 爬取视频数据
 ```bash
-python main.py
+python crawl/main.py
 ```
 - 运行前请确保已在search.py中设置了正确的Cookie
 - 程序会读取result.txt中的BV号
